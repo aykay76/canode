@@ -26,8 +26,12 @@ exports.create = function(input, res) {
     const openssl = new OpenSSL();
 
     openssl.genrsa(`./ca/${input.name}/ca.key.pem`, input.keypass);
-    openssl.on('genrsadone', function() {
-        console.log('Key pair created, creating self-signed certificate!');
-        openssl.selfsign(`./ca/${input.name}/ca.cnf`, `./ca/${input.name}/ca.key.pem`, `./ca/${input.name}/certs/ca.cert.pem`, 'v3_ca', `${input.subject}`);
+    openssl.on('genrsadone', () => {
+        openssl.selfsign(`./ca/${input.name}/ca.cnf`, `./ca/${input.name}/ca.key.pem`, `./ca/${input.name}/certs/ca.cert.pem`, 'v3_ca', `${input.subject}`, `${input.keypass}`);
+    });
+
+    openssl.on('selfsigndone', () => {
+        res.write("New CA successfully created");
+        res.end();
     });
 }

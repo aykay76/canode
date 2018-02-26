@@ -2,7 +2,7 @@ exports.searchReplaceFile = function(oldFilename, newFilename, toReplace, replac
     var fs = require('fs');
     var file = fs.createReadStream(oldFilename, 'utf8');
 
-    file.on('data', function (chunk) {
+    file.on('data', (chunk) => {
         var newContent = chunk.toString();
 
         for (i = 0; i < toReplace.length; i++)
