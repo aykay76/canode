@@ -1,3 +1,6 @@
+var util = require('util');
+var EventEmitter = require('events');
+
 exports.create = function(configPath, keyPath, csrPath, extensions, subject) {
     console.log('Creating new self-signed certificate');
 

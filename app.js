@@ -11,6 +11,7 @@ function webServer(req, res)
 {
     let inputParameters = null;
     let body = [];
+    
     req.on('data', (chunk) => {
         body.push(chunk);
     }).on('end', () => {
@@ -20,7 +21,7 @@ function webServer(req, res)
         switch (inputParameters.module)
         {
             case "ca":
-                const ca = require('./routes/ca.js');
+                const ca = require('./ca');
                 switch (inputParameters.method)
                 {
                     case "create":

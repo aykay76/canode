@@ -2,20 +2,21 @@ var util = require('util');
 var EventEmitter = require('events');
 
 class RSAKey extends EventEmitter {
-    create(path) {
+    create(path, password) {
         console.log('Creating new key pair for CA');
         const { spawn } = require('child_process');
     
-        var openssl = spawn('openssl', ['genrsa', '-aes256', '-out', path, '4096']);
-    
-        //openssl.stdin.write('password');
-        
+        var openssl = spawn('openssl', ['genrsa', '-aes256', '-passout', `pass:${password}`, '-out', path, '4096']);
+            
         openssl.stdout.on('data', (data) => {
-            console.log(`stdout: ${data}`);
+            console.log(`${data}`);
         });
         
         openssl.stderr.on('data', (data) => {
-            console.log(`stderr: ${data}`);
+            console.log(`${data}`);
+            if (data.toString().match('e is 65537') != null){
+                openssl.stdin.write('password');
+            }
         });
     
         openssl.on('close', (code) => {
@@ -25,8 +26,6 @@ class RSAKey extends EventEmitter {
     
             this.emit('complete');
         });
-    
-        console.log('Continuing');
     }    
 }
 
