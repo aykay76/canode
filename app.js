@@ -1,6 +1,7 @@
 // Main app.js file for node.js API interface to OpenSSL
 // this will start a server and handle incoming call routing to different modules
 const http = require('http');
+const CA = require('./ca');
 
 const options = {
     key: null, //fs.readFileSync('test/fixtures/keys/agent2-key.pem'),
@@ -18,16 +19,19 @@ function webServer(req, res)
         body = Buffer.concat(body).toString();
         inputParameters = JSON.parse(body);
 
-        switch (inputParameters.module)
+        switch (inputParameters.action)
         {
-            case "ca":
-                const ca = require('./ca');
-                switch (inputParameters.method)
-                {
-                    case "create":
-                        ca.create(inputParameters, res);
-                        break;
-                }
+            case "newca":
+                ca = new CA();
+                ca.create(inputParameters);
+                ca.on('newcadone', () => {
+                    res.write("New CA successfully created");
+                    res.end();        
+                });
+                break;
+            case "getca":
+                ca = new CA();
+                ca.getRoot();
                 break;
         }
     });
