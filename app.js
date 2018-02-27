@@ -15,7 +15,7 @@ function webServer(req, res)
     
     req.on('data', (chunk) => {
         body.push(chunk);
-    }).on('end', () => {
+    }).on('end', async () => {
         body = Buffer.concat(body).toString();
         inputParameters = JSON.parse(body);
 
@@ -23,12 +23,12 @@ function webServer(req, res)
         {
             case "newca":
                 ca = new CA();
-                ca.create(inputParameters);
-                ca.on('newcadone', () => {
-                    // TODO: replace this with a proper response  :)
-                    res.write("New CA successfully created");
-                    res.end();        
-                });
+
+                await ca.create(inputParameters);
+
+                // TODO: replace this with a proper response  :)
+                res.write("New CA successfully created");
+                res.end();        
                 break;
             case "getca":
                 ca = new CA();
