@@ -25,6 +25,7 @@ function webServer(req, res)
                 ca = new CA();
                 ca.create(inputParameters);
                 ca.on('newcadone', () => {
+                    // TODO: replace this with a proper response  :)
                     res.write("New CA successfully created");
                     res.end();        
                 });
