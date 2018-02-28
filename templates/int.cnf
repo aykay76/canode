@@ -34,8 +34,6 @@ policy            = policy_loose
 [ policy_strict ]
 # The root CA should only sign intermediate certificates that match.
 # See the POLICY FORMAT section of `man ca`.
-countryName             = match
-stateOrProvinceName     = match
 organizationName        = match
 organizationalUnitName  = optional
 commonName              = supplied
@@ -44,9 +42,6 @@ emailAddress            = optional
 [ policy_loose ]
 # Allow the intermediate CA to sign a more diverse range of certificates.
 # See the POLICY FORMAT section of the `ca` man page.
-countryName             = optional
-stateOrProvinceName     = optional
-localityName            = optional
 organizationName        = optional
 organizationalUnitName  = optional
 commonName              = supplied
@@ -66,18 +61,12 @@ x509_extensions     = v3_ca
 
 [ req_distinguished_name ]
 # See <https://en.wikipedia.org/wiki/Certificate_signing_request>.
-countryName                     = Country Name (2 letter code)
-stateOrProvinceName             = State or Province Name
-localityName                    = Locality Name
 0.organizationName              = Organization Name
 organizationalUnitName          = Organizational Unit Name
 commonName                      = Common Name
 emailAddress                    = Email Address
 
 # Optionally, specify some defaults.
-countryName_default             = GB
-stateOrProvinceName_default     = England
-localityName_default            =
 0.organizationName_default      = Alice Ltd
 organizationalUnitName_default  =
 emailAddress_default            =

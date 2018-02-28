@@ -12,66 +12,89 @@ const OpenSSL = require('./openssl');
 class CA extends EventEmitter {
     async create(input) {
         const fs = require('fs');
-
-        if (!fs.existsSync('./ca')) fs.mkdirSync('./ca');
-        if (!fs.existsSync(`./ca/${input.name}`)) fs.mkdirSync(`./ca/${input.name}`, (e) => { if (e) console.log(e); });
-
-        // create the folder structure for the root authority
-        await fs.mkdir(`./ca/${input.name}/root`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`./ca/${input.name}/root/certs`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`./ca/${input.name}/root/crl`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`./ca/${input.name}/root/newcerts`, (e) => { if (e) console.log(e); });
-        await fs.mkdir(`./ca/${input.name}/root/private`, (e) => { if (e) console.log(e); });
-        fs.chmod(`./ca/${input.name}/root/private`, "700", (e) => { if (e) console.log(e); });
-        fs.appendFile(`./ca/${input.name}/root/index`, '', (e) => { if (e) console.log(e); });
-        fs.appendFile(`./ca/${input.name}/root/serial`, '1000', (e) => { if (e) console.log(e); });
-
-        // create the folder structure for the intermediate authority 
-        await fs.mkdir(`./ca/${input.name}/intermediate`, (e) => {if (e) console.log(e); });
-        fs.mkdir(`./ca/${input.name}/intermediate/certs`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`./ca/${input.name}/intermediate/crl`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`./ca/${input.name}/intermediate/csr`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`./ca/${input.name}/intermediate/newcerts`, (e) => { if (e) console.log(e); });
-        await fs.mkdir(`./ca/${input.name}/intermediate/private`, (e) => { if (e) console.log(e); });
-        fs.chmod(`./ca/${input.name}/intermediate/private`, "700", (e) => { if (e) console.log(e); });
-        fs.appendFile(`./ca/${input.name}/intermediate/index`, '', (e) => { if (e) console.log(e); });
-        fs.appendFile(`./ca/${input.name}/intermediate/serial`, '1000', (e) => { if (e) console.log(e); });
-    
-        console.log('Creating root CA config from template');
         const util = require('./util');
-        util.searchReplaceFile('./templates/ca.cnf', `./ca/${input.name}/ca.cnf`, ['%%dir%%'], [`./ca/${input.name}`]);
+
+        let cwd = process.cwd();
+
+        if (!await fs.exists('./ca')) {
+            await fs.mkdir('./ca', (e) => { if (e) console.log(e); });
+        }
+        process.chdir('./ca');
+
+        console.log('Creating root CA config from template');
+        util.searchReplaceFile('..//templates/ca.cnf', `ca.cnf`, ['%%dir%%'], [`.`]);
     
         console.log('Creating intermediate CA config from template');
-        util.searchReplaceFile('./templates/int.cnf', `./ca/${input.name}/int.cnf`, ['%%dir%%'], [`./ca/${input.name}`]);
+        util.searchReplaceFile('..//templates/int.cnf', `int.cnf`, ['%%dir%%'], [`.`]);
 
+        await fs.mkdir(`${input.organisation}`, (e) => { if (e) console.log(e); });
+        process.chdir(`${input.organisation}`);
+
+        await fs.mkdir(`${input.team}`, (e) => { if (e) console.log(e); });
+        process.chdir(`${input.team}`);
+
+        if (!fs.existsSync(`${input.name}`)) fs.mkdirSync(`${input.name}`, (e) => { if (e) console.log(e); });
+        process.chdir(`${input.name}`);
+
+        // create the folder structure for the root authority
+        await fs.mkdir(`root`, (e) => { if (e) console.log(e); });
+        fs.mkdir(`root/certs`, (e) => { if (e) console.log(e); });
+        fs.mkdir(`root/crl`, (e) => { if (e) console.log(e); });
+        fs.mkdir(`root/newcerts`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`root/private`, (e) => { if (e) console.log(e); });
+        fs.chmod(`root/private`, "700", (e) => { if (e) console.log(e); });
+        fs.appendFile(`root/index`, '', (e) => { if (e) console.log(e); });
+        fs.appendFile(`root/serial`, '1000', (e) => { if (e) console.log(e); });
+
+        // create the folder structure for the intermediate authority 
+        await fs.mkdir(`intermediate`, (e) => {if (e) console.log(e); });
+        fs.mkdir(`intermediate/certs`, (e) => { if (e) console.log(e); });
+        fs.mkdir(`intermediate/crl`, (e) => { if (e) console.log(e); });
+        fs.mkdir(`intermediate/csr`, (e) => { if (e) console.log(e); });
+        fs.mkdir(`intermediate/newcerts`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`intermediate/private`, (e) => { if (e) console.log(e); });
+        fs.chmod(`intermediate/private`, "700", (e) => { if (e) console.log(e); });
+        fs.appendFile(`intermediate/index`, '', (e) => { if (e) console.log(e); });
+        fs.appendFile(`intermediate/serial`, '1000', (e) => { if (e) console.log(e); });
+    
         // create a key
         const openssl = new OpenSSL();
+
+        input.subject = `/O=${input.organisation}/OU=${input.team}/CN=${input.name} Root`
+        input.intSubject = `/O=${input.organisation}/OU=${input.team}/CN=${input.name} Intermediate`
     
         console.log('Creating new key pair for CA root');
-        await openssl.genrsa(`./ca/${input.name}/root/ca.key.pem`, input.keypass);
+        await openssl.genrsa(`root/ca.key.pem`, input.keypass);
         console.log('Creating self signed certificate for CA root');
-        await openssl.selfsign(`./ca/${input.name}/ca.cnf`, `./ca/${input.name}/root/ca.key.pem`, `./ca/${input.name}/root/certs/ca.cert.pem`, 'v3_ca', `${input.subject}`, `${input.keypass}`);
+        await openssl.selfsign(`ca.cnf`, `root/ca.key.pem`, `root/certs/ca.cert.pem`, 'v3_ca', `${input.subject}`, `${input.keypass}`);
         console.log('Creating new key pair for intermediate CA');
-        await openssl.genrsa(`./ca/${input.name}/intermediate/intermediate.key.pem`, input.keypass);
+        await openssl.genrsa(`intermediate/intermediate.key.pem`, input.keypass);
         console.log('Creating signed certificate request for intermediate CA');
-        await openssl.req(`./ca/${input.name}/int.cnf`, `./ca/${input.name}/intermediate/intermediate.key.pem`, `./ca/${input.name}/intermediate/csr/intermediate.csr.pem`, `${input.intSubject}`, `${input.keypass}`);
+        await openssl.req(`int.cnf`, `intermediate/intermediate.key.pem`, `intermediate/csr/intermediate.csr.pem`, `${input.intSubject}`, `${input.keypass}`);
         console.log('Signing intermediate CSR with root private key');
-        await openssl.casign(`./ca/${input.name}/ca.cnf`, `./ca/${input.name}/root/certs/ca.cert.pem`, `./ca/${input.name}/intermediate/csr/intermediate.csr.pem`, `./ca/${input.name}/root/ca.key.pem`, `./ca/${input.name}/intermediate/certs/intermediate.cert.pem`, input.keypass);
+        await openssl.casign(`ca.cnf`, `root/certs/ca.cert.pem`, `intermediate/csr/intermediate.csr.pem`, `root/ca.key.pem`, `intermediate/certs/intermediate.cert.pem`, input.keypass);
         console.log('New CA created');
 
-        let rootCertificate = await util.promisedFileRead(`./ca/${input.name}/root/certs/ca.cert.pem`).toString();
-        let intermediateCertificate = await util.promisedFileRead(`./ca/${input.name}/intermediate/certs/intermediate.cert.pem`);
+        process.chdir(cwd);
 
-        // this needs to return root certificate and intermediate certificate so that they can be added to trusted stored
-        return { "rootCertificate": `"${rootCertificate}"`, "intermediateCertificate": `"${intermediateCertificate}"` }
+        return await this.get(input);
     }
     
     async get(input)
     {
         const util = require('./util');
 
-        let rootCertificate = await util.promisedFileRead(`./ca/${input.name}/root/certs/ca.cert.pem`).toString();
-        let intermediateCertificate = await util.promisedFileRead(`./ca/${input.name}/intermediate/certs/intermediate.cert.pem`);
+        let cwd = process.cwd();
+
+        await process.chdir(`./ca/${input.organisation}/${input.team}/${input.name}`);
+
+        let rootCertificate = await util.promisedFileRead(`root/certs/ca.cert.pem`);
+        let intermediateCertificate = await util.promisedFileRead(`intermediate/certs/intermediate.cert.pem`);
+
+        rootCertificate = rootCertificate.split('\n').join('');
+        intermediateCertificate = intermediateCertificate.split('\n').join('');
+
+        process.chdir(cwd);
 
         // this needs to return root certificate and intermediate certificate so that they can be added to trusted stored
         return { "rootCertificate": `"${rootCertificate}"`, "intermediateCertificate": `"${intermediateCertificate}"` }

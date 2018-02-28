@@ -38,12 +38,12 @@ class OpenSSL extends EventEmitter {
                 '-passin', `pass:${keyPass}`,
                 '-key', keyPath, '-out', csrPath, '-subj', `${subject}`]);
         
-                openssl.stdout.on('data', (data) => {
-                    console.log(`stdout: ${data}`);
-                });
-                openssl.stderr.on('data', (data) => {
-                    console.log(`stderr: ${data}`);
-                });
+                // openssl.stdout.on('data', (data) => {
+                //     console.log(`stdout: ${data}`);
+                // });
+                // openssl.stderr.on('data', (data) => {
+                //     console.log(`stderr: ${data}`);
+                // });
                 
                 openssl.on('close', (code) => {
                     let fs = require('fs');
@@ -110,12 +110,12 @@ class OpenSSL extends EventEmitter {
                 '-keyfile', keyPath, '-days', '3650', '-notext', '-md', 'sha256', '-passin', `pass:${keyPass}`,
                 '-in', csrPath, '-out', certPath]);
         
-                openssl.stdout.on('data', (data) => {
-                    console.log(`stdout: ${data}`);
-                });
-                openssl.stderr.on('data', (data) => {
-                    console.log(`stderr: ${data}`);
-                });
+                // openssl.stdout.on('data', (data) => {
+                //     console.log(`stdout: ${data}`);
+                // });
+                // openssl.stderr.on('data', (data) => {
+                //     console.log(`stderr: ${data}`);
+                // });
                 
                 openssl.on('close', (code) => {
                     let fs = require('fs');
