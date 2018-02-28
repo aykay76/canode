@@ -10,7 +10,7 @@ const OpenSSL = require('./openssl');
 // for now I just want it up and running so i'll work locally
 // TODO: flesh out the error handling here. Also come up with a standardised response format.
 class CA extends EventEmitter {
-    async create(input, res) {
+    async create(input) {
         const fs = require('fs');
 
         if (!fs.existsSync('./ca')) fs.mkdirSync('./ca');
@@ -58,6 +58,23 @@ class CA extends EventEmitter {
         console.log('Signing intermediate CSR with root private key');
         await openssl.casign(`./ca/${input.name}/ca.cnf`, `./ca/${input.name}/root/certs/ca.cert.pem`, `./ca/${input.name}/intermediate/csr/intermediate.csr.pem`, `./ca/${input.name}/root/ca.key.pem`, `./ca/${input.name}/intermediate/certs/intermediate.cert.pem`, input.keypass);
         console.log('New CA created');
+
+        let rootCertificate = await util.promisedFileRead(`./ca/${input.name}/root/certs/ca.cert.pem`).toString();
+        let intermediateCertificate = await util.promisedFileRead(`./ca/${input.name}/intermediate/certs/intermediate.cert.pem`);
+
+        // this needs to return root certificate and intermediate certificate so that they can be added to trusted stored
+        return { "rootCertificate": `"${rootCertificate}"`, "intermediateCertificate": `"${intermediateCertificate}"` }
+    }
+    
+    async get(input)
+    {
+        const util = require('./util');
+
+        let rootCertificate = await util.promisedFileRead(`./ca/${input.name}/root/certs/ca.cert.pem`).toString();
+        let intermediateCertificate = await util.promisedFileRead(`./ca/${input.name}/intermediate/certs/intermediate.cert.pem`);
+
+        // this needs to return root certificate and intermediate certificate so that they can be added to trusted stored
+        return { "rootCertificate": `"${rootCertificate}"`, "intermediateCertificate": `"${intermediateCertificate}"` }
     }
 }
 

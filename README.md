@@ -4,18 +4,19 @@ There is no licence on this software because I don't believe many people will vi
 
 Microservices and loosely-coupled components are not new concepts to me, however I was doing some research to see if there were any "standards" or best practices I should follow. I quickly decided not to follow any of them and take a JFDI approach. As such I don't have a lot of structure around modules and routes right now, all actions are performed by hitting the same URL and specifying the action and parameters in the body of the POST. (I didn't mention HTTP, I'm using HTTP, probably obvious - possibly not).
 
+My current thinking is two have two "layers" of APIs; one which exposes all the underlying OpenSSL functionality, and a high level of abstraction that provides a simple approach to CA management for those less interested in the underlying mechanics.
+
 <hr/>
 
-Need much, much more information here but for now i'll document the API as I create it.
-
-All API calls are made using the same Uri with the route and parameters passed as a
-JSON object in the request body
-
-Uri: `http://host:port/`
-Body:
-`{
-  "module": "ca",
-  "method": "create",
-  "name": "new CA",
-  "subject": "C=GB,ST=England,O=Organisation,OU=Team,CN=Project Root CA"
-}`
+ToDo:
+- Authentication/Authorisation, most likely using OIDC
+- Handle multiple CAs per requesting entity
+- Custom DN format on subject/issuer
+- Extensions like SAN
+- End entity certificates
+- Delete certificates
+- Delete CA
+- OCSP interface
+- Reissue certificate
+- Proper documentation  :(
+- Boilerplate client code

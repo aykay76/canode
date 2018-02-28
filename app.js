@@ -19,20 +19,24 @@ function webServer(req, res)
         body = Buffer.concat(body).toString();
         inputParameters = JSON.parse(body);
 
+        let responseString = "";
+
         switch (inputParameters.action)
         {
             case "newca":
                 ca = new CA();
 
-                await ca.create(inputParameters);
+                responseString = await ca.create(inputParameters);
 
                 // TODO: replace this with a proper response  :)
-                res.write("New CA successfully created");
-                res.end();        
+                res.write(JSON.stringify(responseString));
+                res.end();
                 break;
             case "getca":
                 ca = new CA();
-                ca.getRoot();
+                responseString = await ca.get(inputParameters);
+                res.write(JSON.stringify(responseString));
+                res.end();
                 break;
         }
     });

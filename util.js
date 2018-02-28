@@ -1,5 +1,5 @@
 exports.searchReplaceFile = function(oldFilename, newFilename, toReplace, replaceWith) {
-    var fs = require('fs');
+    const fs = require('fs');
     var file = fs.createReadStream(oldFilename, 'utf8');
 
     file.on('data', (chunk) => {
@@ -11,5 +11,28 @@ exports.searchReplaceFile = function(oldFilename, newFilename, toReplace, replac
         }
 
         fs.appendFile(newFilename, newContent, () => { });
+    });
+}
+
+exports.promisedFileRead = function(filename)
+{
+    return new Promise((resolve, reject) => {
+        try
+        {
+            const fs = require('fs');
+            var file = fs.createReadStream(filename, 'utf8');
+            let content = "";
+        
+            file.on('data', (chunk) => {
+                content += chunk.toString();
+            });
+            file.on('end', () => {
+                resolve(content);
+            });
+        }
+        catch (err)
+        {
+            reject(err);
+        }
     });
 }
