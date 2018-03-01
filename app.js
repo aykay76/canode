@@ -23,18 +23,37 @@ function webServer(req, res)
 
         switch (inputParameters.action)
         {
-            case "newca":
+            case "key-create":
+                const OpenSSL = require('./openssl');
+                const openssl = new OpenSSL();
+                const fs = require('fs');
+                let path = `./${Math.random() * 1048576}`;
+                await openssl.genrsa(path, inputParameters.keypass);
+
+                const util = require('./util');
+                let keydata = await util.promisedFileRead(path);
+                keydata = keydata.split('\n').join('');
+                res.write(`{ "key": "${keydata}" }`);
+                res.end();
+
+                await fs.unlink(path);
+
+                break;
+            case "ca-create":
                 ca = new CA();
-
                 responseString = await ca.create(inputParameters);
-
-                // TODO: replace this with a proper response  :)
                 res.write(JSON.stringify(responseString));
                 res.end();
                 break;
-            case "getca":
+            case "ca-get":
                 ca = new CA();
                 responseString = await ca.get(inputParameters);
+                res.write(JSON.stringify(responseString));
+                res.end();
+                break;
+            case "cert-create":
+                ca = new CA();
+                responseString = await ca.createCertificate(inputParameters);
                 res.write(JSON.stringify(responseString));
                 res.end();
                 break;
