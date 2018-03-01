@@ -10,30 +10,37 @@ const options = {
 
 function webServer(req, res)
 {
-    let inputParameters = null;
     let body = [];
     
     req.on('data', (chunk) => {
         body.push(chunk);
     }).on('end', async () => {
+        // create a context object from the default in context.json to add input/output to
+        // this is a simple state management for the request
+        let context = require('./context.json');
         body = Buffer.concat(body).toString();
-        inputParameters = JSON.parse(body);
+        context.rootPath = `${process.env.HOME}/canode`;
+        context.input = JSON.parse(body);
+        context.req = req;
+        context.res = res;
+
+        console.log(context);
 
         let responseString = "";
 
-        switch (inputParameters.action)
+        switch (context.input.action)
         {
             case "key-create":
                 const OpenSSL = require('./openssl');
                 const openssl = new OpenSSL();
                 const fs = require('fs');
                 let path = `./${Math.random() * 1048576}`;
-                await openssl.genrsa(path, inputParameters.keypass);
+                await openssl.genrsa(path, context.input.keypass);
 
                 const util = require('./util');
-                let keydata = await util.promisedFileRead(path);
-                keydata = keydata.split('\n').join('');
-                res.write(`{ "key": "${keydata}" }`);
+                let keydata = (await util.promisedFileRead(path)).split('\n');
+
+                res.write(JSON.stringify({ "key": keydata }));
                 res.end();
 
                 await fs.unlink(path, (err) => { if (err) console.log(err); });
@@ -41,19 +48,19 @@ function webServer(req, res)
                 break;
             case "ca-create":
                 ca = new CA();
-                responseString = await ca.create(inputParameters);
+                responseString = await ca.create(context);
                 res.write(JSON.stringify(responseString));
                 res.end();
                 break;
             case "ca-get":
                 ca = new CA();
-                responseString = await ca.get(inputParameters);
+                responseString = await ca.get(context);
                 res.write(JSON.stringify(responseString));
                 res.end();
                 break;
             case "cert-create":
                 ca = new CA();
-                responseString = await ca.createCertificate(inputParameters);
+                responseString = await ca.createCertificate(context);
                 res.write(JSON.stringify(responseString));
                 res.end();
                 break;
