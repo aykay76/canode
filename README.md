@@ -13,7 +13,6 @@ ToDo:
 - Handle multiple CAs per requesting entity
 - Custom DN format on subject/issuer
 - Extensions like SAN
-- End entity certificates
 - Delete certificates
 - Delete CA
 - OCSP interface

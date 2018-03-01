@@ -21,6 +21,7 @@ function webServer(req, res)
         body = Buffer.concat(body).toString();
         context.rootPath = `${process.env.HOME}/canode`;
         context.input = JSON.parse(body);
+        context.input.keypass = "adefaultpassword"; // this will obviously have to change!
         context.req = req;
         context.res = res;
 
