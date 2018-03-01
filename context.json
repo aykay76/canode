@@ -1,3 +1,4 @@
 {
-    "rootPath": "/usr/local/canode"
+    "rootPath": "/usr/local/canode",
+    "debugOpenSSL": false
 }

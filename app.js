@@ -34,16 +34,17 @@ function webServer(req, res)
                 const OpenSSL = require('./openssl');
                 const openssl = new OpenSSL();
                 const fs = require('fs');
-                let path = `./${Math.random() * 1048576}`;
-                await openssl.genrsa(path, context.input.keypass);
+
+                context.caPath = `${context.rootPath}/${context.input.organisation}/${context.input.team}/${context.input.product}`;
+                let path = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`;
+
+                await openssl.genrsa(context, path, context.input.keypass);
 
                 const util = require('./util');
                 let keydata = (await util.promisedFileRead(path)).split('\n');
 
                 res.write(JSON.stringify({ "key": keydata }));
                 res.end();
-
-                await fs.unlink(path, (err) => { if (err) console.log(err); });
 
                 break;
             case "ca-create":
@@ -59,8 +60,21 @@ function webServer(req, res)
                 res.end();
                 break;
             case "cert-create":
+            case "cert-get":
                 ca = new CA();
-                responseString = await ca.createCertificate(context);
+                responseString = await ca.cert(context);
+                res.write(JSON.stringify(responseString));
+                res.end();
+                break;
+            case "csr-create":
+                ca = new CA();
+                responseString = await ca.csr(context);
+                res.write(JSON.stringify(responseString));
+                res.end();
+                break;
+            case "csr-sign":
+                ca = new CA();
+                responseString = await ca.sign(context);
                 res.write(JSON.stringify(responseString));
                 res.end();
                 break;
