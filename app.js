@@ -1,11 +1,15 @@
 // Main app.js file for node.js API interface to OpenSSL
 // this will start a server and handle incoming call routing to different modules
-const http = require('http');
-const CA = require('./ca');
+const https = require('https')
+const fs = require('fs')
+const CA = require('./ca')
+
+console.log(process.env.CERTPWD)
 
 const options = {
-    key: null, //fs.readFileSync('test/fixtures/keys/agent2-key.pem'),
-    cert: null //fs.readFileSync('test/fixtures/keys/agent2-cert.pem')
+    key: fs.readFileSync(`${process.env.HOME}/canode/myOrg/myTeam/myProduct/intermediate/private/myServer.key.pem`),
+    cert: fs.readFileSync(`${process.env.HOME}/canode/myOrg/myTeam/myProduct/intermediate/certs/myServer.cert.pem`),
+    passphrase: `${process.env.CERTPWD}`
 };
 
 function webServer(req, res)
@@ -36,8 +40,12 @@ function webServer(req, res)
                 const openssl = new OpenSSL();
                 const fs = require('fs');
 
-                context.caPath = `${context.rootPath}/${context.input.organisation}/${context.input.team}/${context.input.product}`;
-                let path = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`;
+                let path = `./${Math.random() * 1048576}`;
+                if (context.input.organisation)
+                {
+                    context.caPath = `${context.rootPath}/${context.input.organisation}/${context.input.team}/${context.input.product}`;
+                    path = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`;
+                }
 
                 await openssl.genrsa(context, path, context.input.keypass);
 
@@ -46,6 +54,12 @@ function webServer(req, res)
 
                 res.write(JSON.stringify({ "key": keydata }));
                 res.end();
+
+                // path was local because this wasn't a request for an entity key so delete it
+                if (path.startsWith('./'))
+                {
+                    await fs.unlink(path);
+                }
 
                 break;
             case "ca-create":
@@ -83,7 +97,7 @@ function webServer(req, res)
     });
 }
 
-// https.createServer(options, webServer).listen(8080);
-http.createServer(webServer).listen(8080);
+https.createServer(options, webServer).listen(8080);
+//http.createServer(webServer).listen(8080);
 
 console.log('Listening on 8080...');
