@@ -36,7 +36,7 @@ function webServer(req, res)
                 res.write(`{ "key": "${keydata}" }`);
                 res.end();
 
-                await fs.unlink(path);
+                await fs.unlink(path, (err) => { if (err) console.log(err); });
 
                 break;
             case "ca-create":
