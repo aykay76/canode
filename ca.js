@@ -34,6 +34,7 @@ class CA extends EventEmitter {
         console.log('Creating intermediate CA config from template');
         util.searchReplaceFile('./templates/int.cnf', `${context.caPath}/int.cnf`, ['%%dir%%'], [`${context.caPath}/intermediate`]);
 
+        console.log('Creating folder structure');
         // create the folder structure for the root authority
         await fs.mkdir(`${context.caPath}/root`, (e) => { if (e) console.log(e); });
         fs.mkdir(`${context.caPath}/root/newcerts`, (e) => { if (e) console.log(e); });
