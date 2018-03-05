@@ -72,24 +72,26 @@ class CA extends EventEmitter {
             `${context.caPath}/root/certs/ca.cert.pem`, 
             'v3_ca', `${context.input.subject}`, `${context.input.keypass}`);
 
+        context.input.keypass = util.generatePassword()
+
         console.log('Creating new key pair for intermediate CA');
         await openssl.genrsa(context, `${context.caPath}/intermediate/private/intermediate.key.pem`, 
             context.input.keypass);
-        
+
+        context.debugOpenSSL = true;
+
         console.log('Creating signed certificate request for intermediate CA');
         await openssl.req(context, `${context.caPath}/int.cnf`, 
             `${context.caPath}/intermediate/private/intermediate.key.pem`, 
             `${context.caPath}/intermediate/intermediate.csr.pem`, 
-            `${context.input.intSubject}`, `${context.input.keypass}`);
+            `${context.input.intSubject}`);
         
-            context.debugOpenSSL = true;
         console.log('Signing intermediate CSR with root private key');
         await openssl.casign(context, `${context.caPath}/ca.cnf`,
             'v3_intermediate_ca', 3650,
             `${context.caPath}/intermediate/intermediate.csr.pem`, 
             `${context.caPath}/root/private/ca.key.pem`,
-            `${context.caPath}/intermediate/certs/intermediate.cert.pem`, 
-            context.input.keypass);
+            `${context.caPath}/intermediate/certs/intermediate.cert.pem`);
         console.log('New CA created');
 
         return await this.get(context);
@@ -122,18 +124,13 @@ class CA extends EventEmitter {
         await openssl.req(context, `${context.caPath}/int.cnf`, 
             `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`, 
             `${context.caPath}/intermediate/csr/${context.input.entity}.csr.pem`, 
-            `${context.subject}`, `${context.input.keypass}`);
+            `${context.subject}`);
         context.debugOpenSSL = false;
         
         let csrPem = (await util.promisedFileRead(`${context.caPath}/intermediate/csr/${context.input.entity}.csr.pem`)).split('\n');
 
         // this needs to return root certificate and intermediate certificate so that they can be added to trusted stored
         return { "csr": csrPem }
-    }
-
-    async sign(context)
-    {
-
     }
 
     // creates an end entity certificate with keys and csr - to make it easier for clients who trust
@@ -149,24 +146,23 @@ class CA extends EventEmitter {
         let exists = fs.existsSync(`${context.caPath}/intermediate/certs/${context.input.entity}.cert.pem`);
         if (!exists)
         {
-            let keyPath = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`;
+            let keyPath = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`
 
-            console.log(`Creating key pair for ${context.subject}`);
-            await openssl.genrsa(context, keyPath, context.input.keypass);
+            console.log(`Creating key pair for ${context.subject}`)
+            await openssl.genrsa(context, keyPath, context.input.keypass)
 
             console.log(`Creating signed certificate request for ${context.subject}`);
             context.debugOpenSSL = true;
             await openssl.req(context, `${context.caPath}/int.cnf`, 
                 `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`, 
                 `${context.caPath}/intermediate/csr/${context.input.entity}.csr.pem`, 
-                `${context.subject}`, `${context.input.keypass}`);
+                `${context.subject}`)
 
             console.log(`Signing CSR for ${context.subject}`);
             await openssl.casign(context, `${context.caPath}/int.cnf`, context.input.type, 375,
                 `${context.caPath}/intermediate/csr/${context.input.entity}.csr.pem`, 
                 `${context.caPath}/intermediate/private/intermediate.key.pem`,
-                `${context.caPath}/intermediate/certs/${context.input.entity}.cert.pem`, 
-                `${context.input.keypass}`);
+                `${context.caPath}/intermediate/certs/${context.input.entity}.cert.pem`)
         }
 
         console.log('Returning certificate');

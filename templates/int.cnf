@@ -104,6 +104,7 @@ subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer:always
 keyUsage = critical, digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
+# subjectAltName = ${ENV:CERTSAN}
 
 [ crl_ext ]
 # Extension for CRLs (`man x509v3_config`).

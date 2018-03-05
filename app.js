@@ -1,16 +1,15 @@
 // Main app.js file for node.js API interface to OpenSSL
 // this will start a server and handle incoming call routing to different modules
-const https = require('https')
+const http = require('http')
 const fs = require('fs')
 const CA = require('./ca')
+const util = require('./util')
 
-console.log(process.env.CERTPWD)
-
-const options = {
-    key: fs.readFileSync(`${process.env.HOME}/canode/myOrg/myTeam/myProduct/intermediate/private/myServer.key.pem`),
-    cert: fs.readFileSync(`${process.env.HOME}/canode/myOrg/myTeam/myProduct/intermediate/certs/myServer.cert.pem`),
-    passphrase: `${process.env.CERTPWD}`
-};
+// const options = {
+//     key: fs.readFileSync(`${process.env.HOME}/canode/myOrg/myTeam/myProduct/intermediate/private/localhost.key.pem`),
+//     cert: fs.readFileSync(`${process.env.HOME}/canode/myOrg/myTeam/myProduct/intermediate/certs/localhost.cert.pem`),
+//     passphrase: `${process.env.CERTPWD}`
+// };
 
 function webServer(req, res)
 {
@@ -25,35 +24,34 @@ function webServer(req, res)
         body = Buffer.concat(body).toString();
         context.rootPath = `${process.env.HOME}/canode`;
         context.input = JSON.parse(body);
-        context.input.keypass = "adefaultpassword"; // this will obviously have to change!
+        context.input.keypass = util.generatePassword();
         context.req = req;
         context.res = res;
-
-        console.log(context);
 
         let responseString = "";
 
         switch (context.input.action)
         {
             case "key-create":
-                const OpenSSL = require('./openssl');
-                const openssl = new OpenSSL();
-                const fs = require('fs');
+                const OpenSSL = require('./openssl')
+                const openssl = new OpenSSL()
+                const fs = require('fs')
 
-                let path = `./${Math.random() * 1048576}`;
+                let path = `./${Math.random() * 1048576}`
                 if (context.input.organisation)
                 {
-                    context.caPath = `${context.rootPath}/${context.input.organisation}/${context.input.team}/${context.input.product}`;
-                    path = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`;
+                    context.caPath = `${context.rootPath}/${context.input.organisation}/${context.input.team}/${context.input.product}`
+                    path = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`
                 }
 
-                await openssl.genrsa(context, path, context.input.keypass);
+                context.input.keypass = util.generatePassword()
+                await openssl.genrsa(context, path, context.input.keypass)
 
-                const util = require('./util');
-                let keydata = (await util.promisedFileRead(path)).split('\n');
+                const util = require('./util')
+                let keydata = (await util.promisedFileRead(path)).split('\n')
 
-                res.write(JSON.stringify({ "key": keydata }));
-                res.end();
+                res.write(JSON.stringify({ "key": keydata }))
+                res.end()
 
                 // path was local because this wasn't a request for an entity key so delete it
                 if (path.startsWith('./'))
@@ -97,7 +95,7 @@ function webServer(req, res)
     });
 }
 
-https.createServer(options, webServer).listen(8080);
-//http.createServer(webServer).listen(8080);
+// https.createServer(options, webServer).listen(8080)
+http.createServer(webServer).listen(8080);
 
-console.log('Listening on 8080...');
+console.log('Listening on 8080...')

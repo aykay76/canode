@@ -36,3 +36,16 @@ exports.promisedFileRead = function(filename)
         }
     });
 }
+
+exports.generatePassword = function()
+{
+    let charset = ['A','B','C','D','E','F','G','H','J','K','L','M','O','P','S','T','U','W','X','Y','Z'];
+    let password = "";
+
+    for (i = 0; i < 16; i++)
+    {
+        password += charset[Math.floor(Math.random() * (charset.length - 1))];
+    }
+
+    return password;
+}
