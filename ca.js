@@ -80,18 +80,22 @@ class CA extends EventEmitter {
 
         context.debugOpenSSL = true;
 
-        console.log('Creating signed certificate request for intermediate CA');
+        console.log('Creating signed certificate request for intermediate CA')
         await openssl.req(context, `${context.caPath}/int.cnf`, 
             `${context.caPath}/intermediate/private/intermediate.key.pem`, 
             `${context.caPath}/intermediate/intermediate.csr.pem`, 
-            `${context.input.intSubject}`);
+            `${context.input.intSubject}`)
         
-        console.log('Signing intermediate CSR with root private key');
+        console.log('Signing intermediate CSR with root private key')
         await openssl.casign(context, `${context.caPath}/ca.cnf`,
             'v3_intermediate_ca', 3650,
             `${context.caPath}/intermediate/intermediate.csr.pem`, 
             `${context.caPath}/root/private/ca.key.pem`,
-            `${context.caPath}/intermediate/certs/intermediate.cert.pem`);
+            `${context.caPath}/intermediate/certs/intermediate.cert.pem`)
+        
+        console.log('Creating CRL')
+        await openssl.gencrl(context)
+        
         console.log('New CA created');
 
         return await this.get(context);

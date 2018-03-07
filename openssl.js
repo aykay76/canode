@@ -71,6 +71,67 @@ class OpenSSL extends EventEmitter {
         });
     }
 
+    gencrl(context) {
+        return new Promise((resolve,reject) => {
+            try
+            {
+                var openssl = spawn('openssl', ['ca', '-config', `${context.caPath}/int.cnf`, '-gencrl', 
+                '-out', `${context.caPath}/intermediate/crl/intermediate.crl.pem`]);
+        
+                if (context.debugOpenSSL)
+                {
+                    openssl.stdout.on('data', (data) => {
+                        console.log(`stdout: ${data}`);
+                    });
+                    openssl.stderr.on('data', (data) => {
+                        console.log(`stderr: ${data}`);
+                    });
+                }
+
+                openssl.on('close', (code) => {
+                    this.emit('reqdone');
+                    resolve();
+                });
+            }
+            catch (err) 
+            {
+                reject(err);
+            }
+        });
+    }
+
+    revoke(context) {
+        return new Promise((resolve,reject) => {
+            try
+            {
+                var openssl = spawn('openssl', ['ca', '-config', `${context.caPath}/int.cnf`, 
+                '-revoke', `${context.caPath}/intermediate/certs/${context.entity}.cert.pem`]);
+        
+                if (context.debugOpenSSL)
+                {
+                    openssl.stdout.on('data', (data) => {
+                        console.log(`stdout: ${data}`);
+                    });
+                    openssl.stderr.on('data', (data) => {
+                        console.log(`stderr: ${data}`);
+                    });
+                }
+
+                openssl.on('close', (code) => {
+                    let fs = require('fs');
+                    fs.chmod(csrPath, '444', (e) => { });
+                    
+                    this.emit('reqdone');
+                    resolve();
+                });
+            }
+            catch (err) 
+            {
+                reject(err);
+            }
+        });
+    }
+
     selfsign(context, configPath, keyPath, csrPath, extensions, subject, keyPass) {
         return new Promise((resolve, reject) => {
             try
