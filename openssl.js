@@ -89,7 +89,7 @@ class OpenSSL extends EventEmitter {
                 }
 
                 openssl.on('close', (code) => {
-                    this.emit('reqdone');
+                    this.emit('gencrldone');
                     resolve();
                 });
             }
@@ -117,11 +117,8 @@ class OpenSSL extends EventEmitter {
                     });
                 }
 
-                openssl.on('close', (code) => {
-                    let fs = require('fs');
-                    fs.chmod(csrPath, '444', (e) => { });
-                    
-                    this.emit('reqdone');
+                openssl.on('close', (code) => {                    
+                    this.emit('revokedone');
                     resolve();
                 });
             }
