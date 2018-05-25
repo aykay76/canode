@@ -5,14 +5,14 @@ const fs = require('fs')
 const path = require('path')
 
 class OpenSSL extends EventEmitter {
-    genrsa(context, keyPath, password) {    
+    genrsa(context) {    
         return new Promise((resolve, reject) => {
             try
             {
-                fs.appendFileSync(`${path.dirname(keyPath) + '/key.bin'}`, context.input.keypass)
+                fs.appendFileSync(`${path.dirname(context.keyPath) + '/key.bin'}`, context.input.keypass)
 
                 // TODO: make options like the algorithm and key length configurable
-                var openssl = spawn('openssl', ['genrsa', '-aes256', '-passout', `file:${path.dirname(keyPath) + '/key.bin'}`, '-out', keyPath, '4096']);
+                var openssl = spawn('openssl', ['genrsa', '-aes256', '-passout', `file:${path.dirname(keyPath) + '/key.bin'}`, '-out', context.keyPath, '4096']);
                     
                 if (context.debugOpenSSL)
                 {
@@ -26,8 +26,8 @@ class OpenSSL extends EventEmitter {
                 }
                 openssl.on('close', (code) => {
                     const fs = require('fs');
-                    console.log(keyPath)
-                    fs.chmod(keyPath, '400', () => { });
+                    console.log(context.keyPath)
+                    fs.chmod(context.keyPath, '400', () => { });
                     this.emit('genrsadone');
                     resolve();
                 });

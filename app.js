@@ -41,14 +41,14 @@ function webServer(req, res)
                 if (context.input.organisation)
                 {
                     context.caPath = `${context.rootPath}/${context.input.organisation}/${context.input.team}/${context.input.product}`
-                    path = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`
+                    context.keyPath = `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`
                 }
 
                 context.input.keypass = util.generatePassword()
-                await openssl.genrsa(context, path, context.input.keypass)
+                await openssl.genrsa(context)
 
                 const util = require('./util')
-                let keydata = (await util.promisedFileRead(path)).split('\n')
+                let keydata = (await util.promisedFileRead(context.keyPath)).split('\n')
 
                 res.write(JSON.stringify({ "key": keydata }))
                 res.end()
@@ -56,7 +56,7 @@ function webServer(req, res)
                 // path was local because this wasn't a request for an entity key so delete it
                 if (path.startsWith('./'))
                 {
-                    await fs.unlink(path);
+                    await fs.unlink(context.keyPath);
                 }
 
                 break;
@@ -96,6 +96,6 @@ function webServer(req, res)
 }
 
 // https.createServer(options, webServer).listen(8080)
-http.createServer(webServer).listen(8080);
+http.createServer(webServer).listen(8443);
 
 console.log('Listening on 8080...')
