@@ -1,0 +1,13 @@
+[Unit]
+Description=Node app for CA HTTP interface
+Documentation=https://github.com/aykay76/canode
+After=network.target
+
+[Service]
+Type=simple
+User=alan
+ExecStart=/usr/bin/node /Users/alan/git/canode/app.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
