@@ -11,6 +11,7 @@ const OpenSSL = require('./openssl');
 // TODO: flesh out the error handling here. Also come up with a standardised response format.
 class CA extends EventEmitter {
     async create(context) {
+        console.log("Method CA.create");
         const fs = require('fs');
         const util = require('./util');
 
@@ -23,8 +24,9 @@ class CA extends EventEmitter {
 
         // let's make this a bit easier on ourselves
         context.caPath = `${context.rootPath}/${context.input.organisation}/${context.input.team}/${context.input.product}`;
+        context.keyPath = `${context.caPath}/root/private/ca.key.pem`
 
-        if (!await fs.exists(`${context.caPath}`)) {
+        if (!fs.existsSync(`${context.caPath}`)) {
             await fs.mkdir(`${context.caPath}`, (e) => { if (e) console.log(e); });
         }
 
@@ -37,24 +39,24 @@ class CA extends EventEmitter {
         console.log('Creating folder structure');
         // create the folder structure for the root authority
         await fs.mkdir(`${context.caPath}/root`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`${context.caPath}/root/newcerts`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`${context.caPath}/root/certs`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`${context.caPath}/root/crl`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`${context.caPath}/root/newcerts`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`${context.caPath}/root/certs`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`${context.caPath}/root/crl`, (e) => { if (e) console.log(e); });
         await fs.mkdir(`${context.caPath}/root/private`, (e) => { if (e) console.log(e); });
-        fs.chmod(`${context.caPath}/root/private`, "700", (e) => { if (e) console.log(e); });
-        fs.appendFile(`${context.caPath}/root/index`, '', (e) => { if (e) console.log(e); });
-        fs.appendFile(`${context.caPath}/root/serial`, '1000', (e) => { if (e) console.log(e); });
+        await fs.chmod(`${context.caPath}/root/private`, "700", (e) => { if (e) console.log(e); });
+        await fs.appendFile(`${context.caPath}/root/index`, '', (e) => { if (e) console.log(e); });
+        await fs.appendFile(`${context.caPath}/root/serial`, '1000', (e) => { if (e) console.log(e); });
 
         // create the folder structure for the intermediate authority 
         await fs.mkdir(`${context.caPath}/intermediate`, (e) => {if (e) console.log(e); });
-        fs.mkdir(`${context.caPath}/intermediate/newcerts`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`${context.caPath}/intermediate/certs`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`${context.caPath}/intermediate/crl`, (e) => { if (e) console.log(e); });
-        fs.mkdir(`${context.caPath}/intermediate/csr`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`${context.caPath}/intermediate/newcerts`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`${context.caPath}/intermediate/certs`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`${context.caPath}/intermediate/crl`, (e) => { if (e) console.log(e); });
+        await fs.mkdir(`${context.caPath}/intermediate/csr`, (e) => { if (e) console.log(e); });
         await fs.mkdir(`${context.caPath}/intermediate/private`, (e) => { if (e) console.log(e); });
-        fs.chmod(`${context.caPath}/intermediate/private`, "700", (e) => { if (e) console.log(e); });
-        fs.appendFile(`${context.caPath}/intermediate/index`, '', (e) => { if (e) console.log(e); });
-        fs.appendFile(`${context.caPath}/intermediate/serial`, '1000', (e) => { if (e) console.log(e); });
+        await fs.chmod(`${context.caPath}/intermediate/private`, "700", (e) => { if (e) console.log(e); });
+        await fs.appendFile(`${context.caPath}/intermediate/index`, '', (e) => { if (e) console.log(e); });
+        await fs.appendFile(`${context.caPath}/intermediate/serial`, '1000', (e) => { if (e) console.log(e); });
     
         // create a key
         const openssl = new OpenSSL();
@@ -63,24 +65,19 @@ class CA extends EventEmitter {
         context.input.intSubject = `/O=${context.input.organisation}/OU=${context.input.team}/CN=${context.input.product} Intermediate`
     
         console.log('Creating new key pair for CA root');
-        await openssl.genrsa(context, `${context.caPath}/root/private/ca.key.pem`, 
-            context.input.keypass);
+        context.input.keypass = util.generatePassword()
+        await openssl.genrsa(context, `${context.caPath}/root/private/ca.key.pem`);
 
         console.log('Creating self signed certificate for CA root');
-        await openssl.selfsign(context, `${context.caPath}/ca.cnf`, 
-            `${context.caPath}/root/private/ca.key.pem`, 
-            `${context.caPath}/root/certs/ca.cert.pem`, 
-            'v3_ca', `${context.input.subject}`, `${context.input.keypass}`);
-
-        context.input.keypass = util.generatePassword()
+        await openssl.selfsign(context, `${context.caPath}/ca.cnf`, `${context.caPath}/root/certs/ca.cert.pem`, 'v3_ca');
 
         console.log('Creating new key pair for intermediate CA');
-        await openssl.genrsa(context, `${context.caPath}/intermediate/private/intermediate.key.pem`, 
-            context.input.keypass);
+        context.input.keypass = util.generatePassword()
+        await openssl.genrsa(context, `${context.caPath}/intermediate/private/intermediate.key.pem`);
 
         context.debugOpenSSL = true;
 
-        console.log('Creating signed certificate request for intermediate CA')
+        console.log('Creating certificate signing request for intermediate CA')
         await openssl.req(context, `${context.caPath}/int.cnf`, 
             `${context.caPath}/intermediate/private/intermediate.key.pem`, 
             `${context.caPath}/intermediate/intermediate.csr.pem`, 
