@@ -2,6 +2,8 @@ exports.searchReplaceFile = function(oldFilename, newFilename, toReplace, replac
     const fs = require('fs');
     var file = fs.createReadStream(oldFilename, 'utf8');
 
+    fs.unlink(newFilename, () => { });
+
     file.on('data', (chunk) => {
         var newContent = chunk.toString();
 
