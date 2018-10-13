@@ -105,6 +105,7 @@ authorityKeyIdentifier = keyid,issuer:always
 keyUsage = critical, digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
 # subjectAltName = ${ENV:CERTSAN}
+authorityInfoAccess = OCSP;URI:http://localhost:8443/ocsp
 
 [ crl_ext ]
 # Extension for CRLs (`man x509v3_config`).

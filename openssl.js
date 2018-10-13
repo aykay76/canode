@@ -5,18 +5,18 @@ const fs = require('fs')
 const path = require('path')
 
 class OpenSSL extends EventEmitter {
-    genrsa(context, keyPath) {    
+    genrsa(context, keyPath, keyPassFile) {    
         return new Promise((resolve, reject) => {
             try
             {
-                if (fs.existsSync(`${path.dirname(keyPath) + '/key.bin'}`))
+                if (fs.existsSync(keyPassFile))
                 {
-                    fs.unlinkSync(`${path.dirname(keyPath) + '/key.bin'}`);
+                    fs.unlinkSync(keyPassFile);
                 }
-                fs.appendFileSync(`${path.dirname(keyPath) + '/key.bin'}`, context.input.keypass)
+                fs.appendFileSync(keyPassFile, context.input.keypass)
 
                 // TODO: make options like the algorithm and key length configurable
-                var openssl = spawn('openssl', ['genrsa', '-aes256', '-passout', `file:${path.dirname(keyPath) + '/key.bin'}`, '-out', keyPath, '4096']);
+                var openssl = spawn('openssl', ['genrsa', '-aes256', '-passout', `file:${keyPassFile}`, '-out', keyPath, '4096']);
 
                 if (context.debugOpenSSL)
                 {
@@ -42,12 +42,12 @@ class OpenSSL extends EventEmitter {
         });
     }
 
-    req(context, configPath, keyPath, csrPath, subject) {
+    req(context, configPath, keyPath, keyPassFile, csrPath, subject) {
         return new Promise((resolve,reject) => {
             try
             {
                 var openssl = spawn('openssl', ['req', '-config', configPath, '-new', '-sha256',
-                '-passin', `file:${path.dirname(keyPath)+'/key.bin'}`,
+                '-passin', `file:${keyPassFile}`,
                 '-key', keyPath, '-out', csrPath, '-subj', `${subject}`]);
         
                 if (context.debugOpenSSL)
@@ -65,6 +65,35 @@ class OpenSSL extends EventEmitter {
                     fs.chmod(csrPath, '444', (e) => { });
                     
                     this.emit('reqdone');
+                    resolve();
+                });
+            }
+            catch (err) 
+            {
+                reject(err);
+            }
+        });
+    }
+
+    genocsp(context) {
+        return new Promise((resolve,reject) => {
+            try
+            {
+                var openssl = spawn('openssl', ['ca', '-config', `${context.caPath}/int.cnf`, '-gencrl', 
+                '-out', `${context.caPath}/intermediate/crl/intermediate.crl.pem`]);
+        
+                if (context.debugOpenSSL)
+                {
+                    openssl.stdout.on('data', (data) => {
+                        console.log(`stdout: ${data}`);
+                    });
+                    openssl.stderr.on('data', (data) => {
+                        console.log(`stderr: ${data}`);
+                    });
+                }
+
+                openssl.on('close', (code) => {
+                    this.emit('gencrldone');
                     resolve();
                 });
             }
@@ -133,12 +162,12 @@ class OpenSSL extends EventEmitter {
         });
     }
 
-    selfsign(context, configPath, csrPath, extensions) {
+    selfsign(context, configPath, keyPath, keyPassFile, csrPath, extensions) {
         return new Promise((resolve, reject) => {
             try
             {
                 var openssl = spawn('openssl', ['req', '-config', configPath, 
-                '-key', context.keyPath, '-new', '-x509', '-days', '7300', '-sha256', '-passin', `file:${path.dirname(context.keyPath) + '/key.bin'}`,
+                '-key', keyPath, '-new', '-x509', '-days', '7300', '-sha256', '-passin', `file:${keyPassFile}`,
                 '-extensions', extensions, '-out', csrPath, '-subj', `${context.input.subject}`]);
         
                 if (context.debugOpenSSL)
@@ -172,20 +201,20 @@ class OpenSSL extends EventEmitter {
         // console.log(`Subject: "${subject}"`);
     }
 
-    casign(context, configPath, extensions, days, csrPath, keyPath, certPath) {
+    casign(context, configPath, extensions, days, csrPath, keyPath, keyPassFile, certPath) {
         console.log('Method: casign');
         console.log(`Config path: ${configPath}`);
         console.log(`Key path: ${keyPath}`);
         console.log(`CSR path: ${csrPath}`);
         console.log(`Cert path: ${certPath}`);
-        console.log(`Key file: ${path.dirname(keyPath) + '/key.bin'}`);
+        console.log(`Key file: ${keyPassFile}`);
 
         return new Promise((resolve,reject) => {
             try
             {
                 var openssl = spawn('openssl', ['ca', '-config', configPath, '-extensions', extensions, 
                 '-batch',
-                '-keyfile', keyPath, '-days', days, '-notext', '-md', 'sha256', '-passin', `file:${path.dirname(keyPath) + '/key.bin'}`,
+                '-keyfile', keyPath, '-days', days, '-notext', '-md', 'sha256', '-passin', `file:${keyPassFile}`,
                 '-in', csrPath, '-out', certPath, '-verbose'], { env: { CERTSAN: `DNS:${context.input.entity}`}});
         
                 if (context.debugOpenSSL)

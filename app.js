@@ -45,7 +45,7 @@ function webServer(req, res)
                 }
 
                 context.input.keypass = util.generatePassword()
-                await openssl.genrsa(context)
+                await openssl.genrsa(context, `${context.caPath}/intermediate/private/${context.input.entity}.key.pem`, `${context.caPath}/intermediate/private/${context.input.entity}.key.bin`)
 
                 const util = require('./util')
                 let keydata = (await util.promisedFileRead(context.keyPath)).split('\n')

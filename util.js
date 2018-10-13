@@ -16,6 +16,30 @@ exports.searchReplaceFile = function(oldFilename, newFilename, toReplace, replac
     });
 }
 
+exports.mkdir = function(name)
+{
+    const fs = require('fs');
+
+    if (fs.existsSync(name)) return true;
+
+    var attempt = 1;
+    while (attempt < 5)
+    {
+        fs.mkdirSync(name)
+
+        if (fs.existsSync(name))
+        {
+            return true;
+        }
+        else
+        {
+            attempt++
+        }
+    }
+
+    return false
+}
+
 exports.promisedFileRead = function(filename)
 {
     return new Promise((resolve, reject) => {

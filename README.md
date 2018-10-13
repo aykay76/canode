@@ -106,3 +106,19 @@ ToDo:
 - Reissue certificate
 - Proper documentation  :(
 - Boilerplate client code
+- Handle different formats using Accept header and MIME types:
+  application/pkcs8                   .p8  .key
+  application/pkcs10                  .p10 .csr
+  application/pkix-cert               .cer
+  application/pkix-crl                .crl
+  application/pkcs7-mime              .p7c
+
+  application/x-x509-ca-cert          .crt .der
+  application/x-x509-user-cert        .crt
+  application/x-pkcs7-crl             .crl
+
+  application/x-pem-file              .pem
+  application/x-pkcs12                .p12 .pfx
+
+  application/x-pkcs7-certificates    .p7b .spc
+  application/x-pkcs7-certreqresp     .p7r
