@@ -5,15 +5,19 @@ const fs = require('fs')
 const path = require('path')
 
 class OpenSSL extends EventEmitter {
-    genrsa(context) {    
+    genrsa(context, keyPath) {    
         return new Promise((resolve, reject) => {
             try
             {
-                fs.appendFileSync(`${path.dirname(context.keyPath) + '/key.bin'}`, context.input.keypass)
+                if (fs.existsSync(`${path.dirname(keyPath) + '/key.bin'}`))
+                {
+                    fs.unlinkSync(`${path.dirname(keyPath) + '/key.bin'}`);
+                }
+                fs.appendFileSync(`${path.dirname(keyPath) + '/key.bin'}`, context.input.keypass)
 
                 // TODO: make options like the algorithm and key length configurable
-                var openssl = spawn('openssl', ['genrsa', '-aes256', '-passout', `file:${path.dirname(keyPath) + '/key.bin'}`, '-out', context.keyPath, '4096']);
-                    
+                var openssl = spawn('openssl', ['genrsa', '-aes256', '-passout', `file:${path.dirname(keyPath) + '/key.bin'}`, '-out', keyPath, '4096']);
+
                 if (context.debugOpenSSL)
                 {
                     openssl.stdout.on('data', (data) => {
@@ -26,8 +30,8 @@ class OpenSSL extends EventEmitter {
                 }
                 openssl.on('close', (code) => {
                     const fs = require('fs');
-                    console.log(context.keyPath)
-                    fs.chmod(context.keyPath, '400', () => { });
+                    console.log(keyPath)
+                    fs.chmod(keyPath, '400', () => { });
                     this.emit('genrsadone');
                     resolve();
                 });
@@ -129,13 +133,13 @@ class OpenSSL extends EventEmitter {
         });
     }
 
-    selfsign(context, configPath, keyPath, csrPath, extensions, subject, keyPass) {
+    selfsign(context, configPath, csrPath, extensions) {
         return new Promise((resolve, reject) => {
             try
             {
                 var openssl = spawn('openssl', ['req', '-config', configPath, 
-                '-key', keyPath, '-new', '-x509', '-days', '7300', '-sha256', '-passin', `file:${path.dirname(keyPath) + '/key.bin'}`,
-                '-extensions', extensions, '-out', csrPath, '-subj', `${subject}`]);
+                '-key', context.keyPath, '-new', '-x509', '-days', '7300', '-sha256', '-passin', `file:${path.dirname(context.keyPath) + '/key.bin'}`,
+                '-extensions', extensions, '-out', csrPath, '-subj', `${context.input.subject}`]);
         
                 if (context.debugOpenSSL)
                 {
@@ -174,6 +178,7 @@ class OpenSSL extends EventEmitter {
         console.log(`Key path: ${keyPath}`);
         console.log(`CSR path: ${csrPath}`);
         console.log(`Cert path: ${certPath}`);
+        console.log(`Key file: ${path.dirname(keyPath) + '/key.bin'}`);
 
         return new Promise((resolve,reject) => {
             try
